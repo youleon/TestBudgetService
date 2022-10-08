@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -15,57 +15,74 @@ namespace TestBudgetService
             _repo = repo;
         }
 
-        public decimal Query(DateTime start, DateTime end)
+        public decimal Query(DateTime startDay, DateTime endDay)
         {
-            if (start > end) return 0;
+            if (startDay > endDay) return 0;
 
-            var inPeriodBudgets = GetBudgets(start, end);
+            var inPeriodBudgets = GetInPeriodBudgets(startDay, endDay);
 
-            decimal result =0;
-            
-            foreach (var budget in inPeriodBudgets)
+            decimal result = 0;
+
+            foreach (var monthBudget in inPeriodBudgets)
             {
-                var daysInMonth = DateTime.DaysInMonth(budget.GetYearMonth().Year, budget.GetYearMonth().Month);
-                var dayBudget = budget.Amount / (decimal)daysInMonth;
+                var daysInMonth = GetBudgetDaysInMonth(monthBudget);
+                var dayBudget = monthBudget.Amount / (decimal)daysInMonth;
+                int days;
 
-                if (start.Year == end.Year && start.Month == end.Month)
+                if (IsSameMonth(startDay, endDay))
                 {
-                    var current = start;
-                    
-                    while (end >= current)
-                    {
-                        result += dayBudget;
-                        current = current.AddDays(1);
-                    }
-
-                    return result;
+                    // (Partial Month) 計算起、訖同月的天數
+                    var timeSpan = endDay.AddDays(1) - startDay;
+                    days = (int)timeSpan.TotalDays;
                 }
-
-                if (budget.YearMonth == start.ToString("yyyyMM"))
+                else if (!IsSameMonth(startDay, endDay) && IsStartMonthBudget(startDay, monthBudget))
                 {
-                    result += dayBudget * (daysInMonth - start.Day+1);
+                    // (Cross Month) 計算預算起始月份的天數
+                    days = daysInMonth - startDay.Day + 1;
                 }
-                else if (budget.YearMonth == end.ToString("yyyyMM"))
+                else if (!IsSameMonth(startDay, endDay) && IsEndMonthBudget(endDay, monthBudget))
                 {
-                    result += dayBudget *  end.Day ;
+                    // (Cross Month) 計算預算結束月份的天數
+                    days = endDay.Day;
                 }
                 else
                 {
-                    result += budget.Amount;
+                    // (Cross Month) 計算跨月（整個月）的天數
+                    days = daysInMonth;
                 }
 
+                result += dayBudget * days;
             }
 
             return result;
         }
 
-        private List<Budget> GetBudgets(DateTime start, DateTime end)
+        private static int GetBudgetDaysInMonth(Budget monthBudget)
+        {
+            return DateTime.DaysInMonth(monthBudget.GetYearMonth().Year, monthBudget.GetYearMonth().Month);
+        }
+
+        private static bool IsEndMonthBudget(DateTime end, Budget monthBudget)
+        {
+            return monthBudget.YearMonth == end.ToString("yyyyMM");
+        }
+
+        private static bool IsStartMonthBudget(DateTime start, Budget monthBudget)
+        {
+            return monthBudget.YearMonth == start.ToString("yyyyMM");
+        }
+
+        private static bool IsSameMonth(DateTime start, DateTime end)
+        {
+            return start.Year == end.Year && start.Month == end.Month;
+        }
+
+        private IEnumerable<Budget> GetInPeriodBudgets(DateTime start, DateTime end)
         {
             var budgets = _repo.GetAll();
             var startDate = DateTime.ParseExact(start.ToString("yyyyMM") + "01", "yyyyMMdd", CultureInfo.CurrentCulture);
             var endDate = DateTime.ParseExact(end.ToString("yyyyMM") + "01", "yyyyMMdd", CultureInfo.CurrentCulture);
-            var inPeriodBudgets = budgets.Where(w => w.GetYearMonth() >= startDate && w.GetYearMonth() <= endDate);
-            return inPeriodBudgets.ToList();
+            return budgets.Where(w => w.GetYearMonth() >= startDate && w.GetYearMonth() <= endDate);
         }
     }
 }
