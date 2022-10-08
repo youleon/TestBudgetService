@@ -156,5 +156,38 @@ namespace TestBudgetService
                 new DateTime(2022, 1, 1),
                 new DateTime(2022, 1, 30));
         }
+        [Test]
+        public void QueryContainOtherMonthData()
+        {
+            _budgetRepo = NSubstitute.Substitute.For<IBudgetRepo>();
+            _budgetRepo.GetAll().Returns(new List<Budget>
+            {
+                new Budget
+                {
+                    YearMonth = "202210",
+                    Amount = 310,
+                },
+                new Budget
+                {
+                    YearMonth = "202211",
+                    Amount = 3000,
+                },                
+                new Budget
+                {
+                    YearMonth = "202212",
+                    Amount = 31,
+                },
+                new Budget
+                {
+                    YearMonth = "202301",
+                    Amount = 31,
+                }
+            });
+
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(3025,
+                new DateTime(2022, 10, 30),
+                new DateTime(2022, 12, 5));
+        }
     }
 }

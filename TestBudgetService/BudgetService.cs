@@ -20,6 +20,7 @@ namespace TestBudgetService
             {
                 return 0;
             }
+            
             var budgets = GetList(start, end);
             decimal result =0;
             
@@ -28,7 +29,7 @@ namespace TestBudgetService
                 var days = DateTime.DaysInMonth(budget.GetYearMonth().Year, budget.GetYearMonth().Month);
                 var dayBudget
                     = budget.Amount  / (decimal)days ;
-                if (budgets.Count == 1)
+                if (start.ToString("yyyyMM")==end.ToString("yyyyMM"))
                 {
                     var current = start;
                     
@@ -41,11 +42,11 @@ namespace TestBudgetService
                     return result;
                 }
 
-                if (budget.GetYearMonth().Year == start.Year && budget.GetYearMonth().Month == start.Month)
+                if (budget.YearMonth == start.ToString("yyyyMM"))
                 {
                     result += dayBudget * (days - start.Day+1);
                 }
-                else if (budget.GetYearMonth().Year == end.Year && budget.GetYearMonth().Month == end.Month)
+                else if (budget.YearMonth == end.ToString("yyyyMM"))
                 {
                     result += dayBudget *  end.Day ;
                 }
