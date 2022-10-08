@@ -16,13 +16,47 @@ namespace TestBudgetService
         }
         public decimal Query(DateTime start, DateTime end)
         {
-            var list = GetList(start, end);
-            //foreach (var VARIABLE in COLLECTION)
-            //{
-                
-            //}
+            if (start > end)
+            {
+                return 0;
+            }
+            var budgets = GetList(start, end);
+            decimal result =0;
+            
+            foreach (var budget in budgets)
+            {
+                var days = DateTime.DaysInMonth(budget.GetYearMonth().Year, budget.GetYearMonth().Month);
+                var dayBudget
+                    = budget.Amount  / (decimal)days ;
+                if (budgets.Count == 1)
+                {
+                    var current = start;
+                    
+                    while (end >= current)
+                    {
+                        result += dayBudget;
+                        current = current.AddDays(1);
+                    }
 
-            return list.Count;
+                    return result;
+                }
+
+                if (budget.GetYearMonth().Year == start.Year && budget.GetYearMonth().Month == start.Month)
+                {
+                    result += dayBudget * (days - start.Day+1);
+                }
+                else if (budget.GetYearMonth().Year == end.Year && budget.GetYearMonth().Month == end.Month)
+                {
+                    result += dayBudget *  end.Day ;
+                }
+                else
+                {
+                    result += budget.Amount;
+                }
+
+            }
+
+            return result;
         }
 
         private List<Budget> GetList(DateTime start, DateTime end)
