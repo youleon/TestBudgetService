@@ -8,6 +8,7 @@ namespace TestBudgetService
     public class BudgetTests
     {
         private IBudgetRepo _budgetRepo;
+        private static BudgetService _testBudgetService;
 
         [SetUp]
         public void Setup()
@@ -17,7 +18,6 @@ namespace TestBudgetService
         [Test]
         public void QueryOneMonth()
         {
-            _budgetRepo = NSubstitute.Substitute.For<IBudgetRepo>();
             _budgetRepo.GetAll().Returns(new List<Budget>
             {
                 new Budget
@@ -36,9 +36,11 @@ namespace TestBudgetService
                     Amount = 3100,
                 },
             });
-            var testBudgetService = new BudgetService(_budgetRepo);
-            Assert.AreEqual(testBudgetService.Query(new DateTime(2022, 10, 1),
-                new DateTime(2022, 10, 31)), 3100);
+
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(3100,
+                new DateTime(2022, 10, 1),
+                new DateTime(2022, 10, 31));
         }
         [Test]
         public void QueryPartialMonth()
@@ -52,9 +54,10 @@ namespace TestBudgetService
                     Amount = 3100,
                 }
             });
-            var testBudgetService = new BudgetService(_budgetRepo);
-            Assert.AreEqual(testBudgetService.Query(new DateTime(2022, 10, 1),
-                new DateTime(2022, 10, 5)), 500);
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(500,
+                new DateTime(2022, 10, 1),
+                    new DateTime(2022, 10, 5));
         }
         [Test]
         public void QueryCrossTwoMonth()
@@ -73,9 +76,11 @@ namespace TestBudgetService
                     Amount = 3000,
                 }
             });
-            var testBudgetService = new BudgetService(_budgetRepo);
-            Assert.AreEqual(testBudgetService.Query(new DateTime(2022, 10, 30),
-                new DateTime(2022, 11, 5)), 520);
+
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(520,
+                new DateTime(2022, 10, 30),
+                new DateTime(2022, 11, 5));
         }
         [Test]
         public void QueryCrossThreeMonth()
@@ -99,10 +104,17 @@ namespace TestBudgetService
                     Amount = 31,
                 }
             });
-            var testBudgetService = new BudgetService(_budgetRepo);
-            Assert.AreEqual(testBudgetService.Query(new DateTime(2022, 10, 30),
-                new DateTime(2022, 12, 3)), 3023);
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(3023, 
+                new DateTime(2022, 10, 30), new DateTime(2022, 12, 3));
         }
+
+        private static void BudgetShouldBe(int expected, DateTime startDate, DateTime endDate)
+        {
+            Assert.AreEqual(_testBudgetService.Query(startDate,
+                endDate), expected);
+        }
+
         [Test]
         public void QueryInvalidDate()
         {
@@ -125,9 +137,24 @@ namespace TestBudgetService
                     Amount = 31,
                 }
             });
-            var testBudgetService = new BudgetService(_budgetRepo);
-            Assert.AreEqual(testBudgetService.Query(new DateTime(2022, 12, 30),
-                new DateTime(2022, 12, 3)), 0);
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(0,
+                new DateTime(2022, 12, 30),
+                new DateTime(2022, 12, 3));
+        }
+        [Test]
+        public void QueryNoBudgetData()
+        {
+            _budgetRepo = NSubstitute.Substitute.For<IBudgetRepo>();
+            _budgetRepo.GetAll().Returns(new List<Budget>
+            {
+                
+            });
+
+            _testBudgetService = new BudgetService(_budgetRepo);
+            BudgetShouldBe(0,
+                new DateTime(2022, 1, 1),
+                new DateTime(2022, 1, 30));
         }
     }
 }
