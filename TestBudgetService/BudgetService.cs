@@ -14,21 +14,21 @@ namespace TestBudgetService
         {
             _repo = repo;
         }
+
         public decimal Query(DateTime start, DateTime end)
         {
-            if (start > end)
-            {
-                return 0;
-            }
-            var budgets = GetList(start, end);
+            if (start > end) return 0;
+
+            var inPeriodBudgets = GetBudgets(start, end);
+
             decimal result =0;
             
-            foreach (var budget in budgets)
+            foreach (var budget in inPeriodBudgets)
             {
-                var days = DateTime.DaysInMonth(budget.GetYearMonth().Year, budget.GetYearMonth().Month);
-                var dayBudget
-                    = budget.Amount  / (decimal)days ;
-                if (budgets.Count == 1)
+                var daysInMonth = DateTime.DaysInMonth(budget.GetYearMonth().Year, budget.GetYearMonth().Month);
+                var dayBudget = budget.Amount / (decimal)daysInMonth;
+
+                if (start.Year == end.Year && start.Month == end.Month)
                 {
                     var current = start;
                     
@@ -41,11 +41,11 @@ namespace TestBudgetService
                     return result;
                 }
 
-                if (budget.GetYearMonth().Year == start.Year && budget.GetYearMonth().Month == start.Month)
+                if (budget.YearMonth == start.ToString("yyyyMM"))
                 {
-                    result += dayBudget * (days - start.Day+1);
+                    result += dayBudget * (daysInMonth - start.Day+1);
                 }
-                else if (budget.GetYearMonth().Year == end.Year && budget.GetYearMonth().Month == end.Month)
+                else if (budget.YearMonth == end.ToString("yyyyMM"))
                 {
                     result += dayBudget *  end.Day ;
                 }
@@ -59,13 +59,13 @@ namespace TestBudgetService
             return result;
         }
 
-        private List<Budget> GetList(DateTime start, DateTime end)
+        private List<Budget> GetBudgets(DateTime start, DateTime end)
         {
             var budgets = _repo.GetAll();
             var startDate = DateTime.ParseExact(start.ToString("yyyyMM") + "01", "yyyyMMdd", CultureInfo.CurrentCulture);
             var endDate = DateTime.ParseExact(end.ToString("yyyyMM") + "01", "yyyyMMdd", CultureInfo.CurrentCulture);
-            var lists = budgets.Where(w => w.GetYearMonth() >= startDate && w.GetYearMonth() <= endDate);
-            return lists.ToList();
+            var inPeriodBudgets = budgets.Where(w => w.GetYearMonth() >= startDate && w.GetYearMonth() <= endDate);
+            return inPeriodBudgets.ToList();
         }
     }
 }
