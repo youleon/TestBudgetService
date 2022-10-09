@@ -26,12 +26,13 @@ namespace TestBudgetService
             foreach (var monthBudget in inPeriodBudgets)
             {
                 var daysInMonth = GetBudgetDaysInMonth(monthBudget);
-                var dayBudget = monthBudget.Amount / (decimal)daysInMonth;
-                int days;
+
+                // (Cross Month 跨月) 預設計算整個月份的天數
+                var days = daysInMonth;
 
                 if (IsSameMonth(startDay, endDay))
                 {
-                    // (Partial Month) 計算起、訖同月的天數
+                    // (Partial Month) 計算起、迄在同月的天數
                     var timeSpan = endDay.AddDays(1) - startDay;
                     days = (int)timeSpan.TotalDays;
                 }
@@ -45,13 +46,8 @@ namespace TestBudgetService
                     // (Cross Month) 計算預算結束月份的天數
                     days = endDay.Day;
                 }
-                else
-                {
-                    // (Cross Month) 計算跨月（整個月）的天數
-                    days = daysInMonth;
-                }
 
-                result += dayBudget * days;
+                result += monthBudget.Amount / (decimal)daysInMonth * days;
             }
 
             return result;
