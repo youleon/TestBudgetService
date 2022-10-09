@@ -44,7 +44,7 @@ namespace TestBudgetService
 
                 if (budget.YearMonth == start.ToString("yyyyMM"))
                 {
-                    result += dayBudget * (days - start.Day+1);
+                    result += dayBudget * (days - start.Day + 1);
                 }
                 else if (budget.YearMonth == end.ToString("yyyyMM"))
                 {
